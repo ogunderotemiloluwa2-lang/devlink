@@ -66,7 +66,7 @@ router.post("/", protect, multipleImageUpload, createPostValidator, validate, po
  *       - in: query
  *         name: mode
  *         schema: { type: string, enum: [all, following] }
- *         description: "following" requires authentication
+ *         description: '"following" requires authentication'
  *     responses:
  *       200: { description: Feed page fetched }
  */
