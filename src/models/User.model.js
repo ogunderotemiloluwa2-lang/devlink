@@ -68,8 +68,6 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ name: "text", username: "text" });
 
 userSchema.pre("save", async function hashPassword(next) {
