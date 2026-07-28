@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: devlink-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      # Frontend URL — update this after deploying the frontend on Vercel
+      - key: CLIENT_URL
+        value: https://devlink-frontend.vercel.app
+      # API URL — update this to the Render URL after first deployment
+      - key: API_URL
+        value: https://devlink-backend.onrender.com
+      # MongoDB Atlas — connection string for devlink database
+      - key: MONGO_URI
+        value: mongodb+srv://takeoff:rhemajatto12@cluster0.zzsjiwz.mongodb.net/devlink?retryWrites=true&w=majority
+      # JWT Secrets — generated strong secrets
+      - key: JWT_ACCESS_SECRET
+        value: 2dfed8e37c1675bb7922aaea43f94dfd3b7cfa1288c274fe30106f06ccb832b26decab59702c28d1596dc06ce0b7872a
+      - key: JWT_REFRESH_SECRET
+        value: b6f5c3139b4b33773803a9d33378232989af7b2d33e2283a888af92cf7e87add08234f97f0ef67c41f2bd4fa56255c99
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: JWT_EMAIL_SECRET
+        value: 840d0f1f5b00a947c24b25e03b53955f7bf9a260650212d61d43ce97b5da12fb
+      - key: JWT_RESET_SECRET
+        value: a4324ff63270da8e430d05232630abd3b329966e8f1b307bf1091d99d2c5c572
+      # Cookie Secret
+      - key: COOKIE_SECRET
+        value: 9c08f258a687183b31a81ea629c0deaae63f2bc7e7455fa24e9d75cbbc773b00
+      # Cloudinary — set these on Render dashboard
+      - key: CLOUDINARY_CLOUD_NAME
+        value: your_cloud_name
+      - key: CLOUDINARY_API_KEY
+        value: your_api_key
+      - key: CLOUDINARY_API_SECRET
+        value: your_api_secret
+      # SMTP (Brevo) — set these on Render dashboard
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        value: your_brevo_smtp_user
+      - key: SMTP_PASS
+        value: your_brevo_smtp_pass
+      - key: EMAIL_FROM
+        value: DevLink <no-reply@devlink.io>
+      # Redis (optional — leave empty to disable)
+      - key: REDIS_URL
+        value: ""
+      # Rate limiting
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 300
