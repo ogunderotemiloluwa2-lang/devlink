@@ -16,7 +16,22 @@ const registerChatHandlers = require("./chat.socket");
  */
 function initSocket(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: clientUrl, credentials: true },
+    cors: {
+      origin: (origin, callback) => {
+        const allowedOrigins = [
+          clientUrl,
+          "http://localhost:5173",
+          "http://localhost:3000",
+          "https://devlink-frontend.vercel.app",
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+    },
   });
 
   io.use((socket, next) => {
