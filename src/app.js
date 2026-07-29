@@ -16,7 +16,7 @@ const xssSanitize = require("./middleware/xss.middleware");
 const hppSanitize = require("./middleware/hpp.middleware");
 const logger = require("./utils/logger");
 
-const app = express();
+const app = express(); 
 
 app.set("trust proxy", 1);
 
