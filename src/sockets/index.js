@@ -23,6 +23,9 @@ function initSocket(httpServer) {
           "http://localhost:5173",
           "http://localhost:3000",
           "https://devlink-frontend.vercel.app",
+          "https://devlink-frontend-950rz0k5a-samson24434.vercel.app",
+          "https://devlinkconnect.vercel.app",
+          "https://devlink-31v3.onrender.com",
         ];
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
