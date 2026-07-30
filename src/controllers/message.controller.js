@@ -7,6 +7,7 @@ const { encodeCursor, cursorFilter } = require("../utils/cursorPagination");
 const { isActiveParticipant, applyNewMessageToConversation } = require("../services/conversation.service");
 const { uploadMessageAttachment, deleteAsset } = require("../services/cloudinary.service");
 const { createOrTouchMessageNotification } = require("../services/notification.service");
+const logger = require("../utils/logger");
 
 const USER_SELECT = "name username avatarUrl role";
 
@@ -107,26 +108,31 @@ const sendMessage = catchAsync(async (req, res) => {
   emitToConversation(req, conversation._id, "message:new", message);
 
   // Mark message as delivered to online participants (those in the conversation room)
-  const io = req.app.get("io");
-  const room = io.sockets.adapter.rooms.get(`conversation:${conversation._id}`);
-  const onlineParticipantIds = [];
-  if (room) {
-    for (const socketId of room) {
-      const socket = io.sockets.sockets.get(socketId);
-      if (socket && socket.userId && !socket.userId.equals(req.user._id)) {
-        onlineParticipantIds.push(socket.userId);
+  try {
+    const io = req.app.get("io");
+    const roomName = `conversation:${conversation._id}`;
+    const room = io.sockets.adapter.rooms.get(roomName);
+    const onlineParticipantIds = [];
+    if (room) {
+      for (const socketId of room) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket && socket.userId && !socket.userId.equals(req.user._id)) {
+          onlineParticipantIds.push(socket.userId);
+        }
       }
     }
-  }
-  if (onlineParticipantIds.length > 0) {
-    await Message.updateOne(
-      { _id: message._id },
-      { $addToSet: { deliveredTo: { $each: onlineParticipantIds.map((uid) => ({ user: uid, deliveredAt: new Date() })) } } }
-    );
+    if (onlineParticipantIds.length > 0) {
+      const deliveredEntries = onlineParticipantIds.map((uid) => ({ user: uid, deliveredAt: new Date() }));
+      await Message.updateOne(
+        { _id: message._id },
+        { $addToSet: { deliveredTo: { $each: deliveredEntries } } }
+      );
+    }
+  } catch (err) {
+    logger.warn("Failed to mark message as delivered:", err.message);
   }
 
   const notificationText =
-    conversation.type === "group" ? `sent a message in ${conversation.groupName || "a group"}` : "sent you a message";
 
   await Promise.all(
     conversation.participants
