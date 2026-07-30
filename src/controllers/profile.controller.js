@@ -50,7 +50,18 @@ const getMyProfile = catchAsync(async (req, res) => {
   const profile = await getOrCreateProfile(req.user._id);
   await profile.populate("skills");
 
-  return new ApiResponse(200, { user: req.user.toSafeObject(), profile }, "Profile fetched").send(res);
+  // Calculate total likes received on the user's posts for dashboard stats
+  const postLikesResult = await Post.aggregate([
+    { $match: { author: req.user._id, status: "active" } },
+    { $group: { _id: null, totalLikes: { $sum: "$likesCount" } } },
+  ]);
+  const totalPostLikes = postLikesResult[0]?.totalLikes || 0;
+
+  return new ApiResponse(
+    200,
+    { user: req.user.toSafeObject(), profile, stats: { totalPostLikes } },
+    "Profile fetched"
+  ).send(res);
 });
 
 /**
