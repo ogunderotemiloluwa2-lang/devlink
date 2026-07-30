@@ -105,8 +105,6 @@ const sendMessage = catchAsync(async (req, res) => {
     await message.populate({ path: "replyTo", select: "content sender isDeleted", populate: { path: "sender", select: USER_SELECT } });
   }
 
-  emitToConversation(req, conversation._id, "message:new", message);
-
   // Mark message as delivered to online participants (those in the conversation room)
   const io = req.app.get("io");
   try {
@@ -128,10 +126,15 @@ const sendMessage = catchAsync(async (req, res) => {
         { _id: message._id },
         { $addToSet: { deliveredTo: { $each: deliveredEntries } } }
       );
+      // Update the in-memory message object so the emitted event includes deliveredTo
+      message.deliveredTo = [...(message.deliveredTo || []), ...deliveredEntries];
     }
   } catch (err) {
     logger.warn("Failed to mark message as delivered:", err.message);
   }
+
+  // Emit AFTER deliveredTo update so recipients see correct delivery status
+  emitToConversation(req, conversation._id, "message:new", message);
 
   const notificationText =
     conversation.type === "group" ? `sent a message in ${conversation.groupName || "a group"}` : "sent you a message";
