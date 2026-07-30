@@ -111,7 +111,8 @@ const sendMessage = catchAsync(async (req, res) => {
   try {
     const io = req.app.get("io");
     const roomName = `conversation:${conversation._id}`;
-    const room = io.sockets.adapter.rooms.get(roomName);
+    const rooms = io.sockets.adapter.rooms;
+    const room = rooms?.get ? rooms.get(roomName) : rooms?.[roomName];
     const onlineParticipantIds = [];
     if (room) {
       for (const socketId of room) {
