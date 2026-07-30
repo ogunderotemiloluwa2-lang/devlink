@@ -1,5 +1,6 @@
 const User = require("../models/User.model");
 const Profile = require("../models/Profile.model");
+const Post = require("../models/Post.model");
 const Skill = require("../models/Skill.model");
 const catchAsync = require("../utils/catchAsync");
 const ApiError = require("../utils/ApiError");

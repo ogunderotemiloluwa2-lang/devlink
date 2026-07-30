@@ -7,13 +7,13 @@ function setRefreshCookie(res, token) {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
-    path: "/api/v1/auth",
+    path: "/",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 }
 
 function clearRefreshCookie(res) {
-  res.clearCookie(REFRESH_COOKIE_NAME, { path: "/api/v1/auth" });
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: "/" });
 }
 
 module.exports = { REFRESH_COOKIE_NAME, setRefreshCookie, clearRefreshCookie };
