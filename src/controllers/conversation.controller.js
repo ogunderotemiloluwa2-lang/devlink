@@ -284,6 +284,12 @@ const markConversationRead = catchAsync(async (req, res) => {
     { $push: { readBy: { user: req.user._id, readAt: new Date() } } }
   );
 
+  // Also mark messages as delivered to this user
+  await Message.updateMany(
+    { conversation: conversation._id, sender: { $ne: req.user._id }, "deliveredTo.user": { $ne: req.user._id } },
+    { $addToSet: { deliveredTo: { user: req.user._id, deliveredAt: new Date() } } }
+  );
+
   const io = req.app.get("io");
   io.to(`conversation:${conversation._id}`).emit("conversation:read", {
     conversationId: conversation._id,

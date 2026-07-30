@@ -106,7 +106,25 @@ const sendMessage = catchAsync(async (req, res) => {
 
   emitToConversation(req, conversation._id, "message:new", message);
 
+  // Mark message as delivered to online participants (those in the conversation room)
   const io = req.app.get("io");
+  const room = io.sockets.adapter.rooms.get(`conversation:${conversation._id}`);
+  const onlineParticipantIds = [];
+  if (room) {
+    for (const socketId of room) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket && socket.userId && !socket.userId.equals(req.user._id)) {
+        onlineParticipantIds.push(socket.userId);
+      }
+    }
+  }
+  if (onlineParticipantIds.length > 0) {
+    await Message.updateOne(
+      { _id: message._id },
+      { $addToSet: { deliveredTo: { $each: onlineParticipantIds.map((uid) => ({ user: uid, deliveredAt: new Date() })) } } }
+    );
+  }
+
   const notificationText =
     conversation.type === "group" ? `sent a message in ${conversation.groupName || "a group"}` : "sent you a message";
 

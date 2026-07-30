@@ -46,6 +46,15 @@ const messageSchema = new Schema(
       },
     ],
 
+    // Tracks which participants have received (seen in their chat list) the message
+    deliveredTo: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: "User" },
+        deliveredAt: { type: Date, default: Date.now },
+        _id: false,
+      },
+    ],
+
     isEdited: { type: Boolean, default: false },
     editedAt: { type: Date, default: null },
 

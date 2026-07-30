@@ -1,4 +1,5 @@
 const Conversation = require("../models/Conversation.model");
+const Message = require("../models/Message.model");
 const { isActiveParticipant } = require("../services/conversation.service");
 const logger = require("../utils/logger");
 
@@ -19,6 +20,17 @@ function registerChatHandlers(io, socket) {
         return ack?.({ ok: false, error: "Not a participant of this conversation" });
       }
       socket.join(`conversation:${conversationId}`);
+
+      // Mark all messages in this conversation as delivered to this user
+      await Message.updateMany(
+        {
+          conversation: conversation._id,
+          sender: { $ne: socket.userId },
+          "deliveredTo.user": { $ne: socket.userId },
+        },
+        { $addToSet: { deliveredTo: { user: socket.userId, deliveredAt: new Date() } } }
+      );
+
       ack?.({ ok: true });
     } catch (err) {
       logger.warn("conversation:join failed:", err.message);
