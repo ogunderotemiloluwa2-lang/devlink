@@ -215,6 +215,40 @@ router.get("/", optionalAuth, listProfilesValidator, validate, profileController
 
 /**
  * @swagger
+ * /profiles/users:
+ *   get:
+ *     summary: Browse all public developer profiles (discover users)
+ *     tags: [Profiles]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Search by name or username
+ *       - in: query
+ *         name: skill
+ *         schema: { type: string }
+ *       - in: query
+ *         name: location
+ *         schema: { type: string }
+ *       - in: query
+ *         name: openToWork
+ *         schema: { type: boolean }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *       - in: query
+ *         name: sort
+ *         schema: { type: string, enum: [popular, recent] }
+ *     responses:
+ *       200: { description: List of all developer profiles }
+ */
+router.get("/users", optionalAuth, listProfilesValidator, validate, profileController.listUsers);
+
+/**
+ * @swagger
  * /profiles/{username}:
  *   get:
  *     summary: Get a public developer profile by username

@@ -236,6 +236,71 @@ const listProfiles = catchAsync(async (req, res) => {
 });
 
 /**
+ * GET /profiles/users (public — browse all connected users with pagination)
+ * Query params: q, skill, location, openToWork, page, limit, sort
+ * Returns all public profiles so users can discover and connect with each other.
+ */
+const listUsers = catchAsync(async (req, res) => {
+  const { q, skill, location, openToWork, sort } = req.query;
+  const { page, limit, skip } = getPagination(req.query);
+
+  const profileFilter = { visibility: "public" };
+  if (location) profileFilter.location = new RegExp(location.trim(), "i");
+  if (openToWork === "true") profileFilter.openToWork = true;
+
+  let candidateUserIds = null;
+
+  if (q) {
+    const regex = new RegExp(q.trim(), "i");
+    const matchingUsers = await User.find({
+      status: "active",
+      $or: [{ name: regex }, { username: regex }],
+    }).select("_id");
+    candidateUserIds = matchingUsers.map((u) => u._id.toString());
+  }
+
+  if (skill) {
+    const matchingSkills = await Skill.find({ slug: new RegExp(skill.trim().toLowerCase(), "i") }).select("user");
+    const skillUserIds = [...new Set(matchingSkills.map((s) => s.user.toString()))];
+    candidateUserIds = candidateUserIds
+      ? candidateUserIds.filter((id) => skillUserIds.includes(id))
+      : skillUserIds;
+  }
+
+  if (candidateUserIds) {
+    if (candidateUserIds.length === 0) {
+      return new ApiResponse(200, { profiles: [] }, "No developers found", buildMeta({ page, limit, total: 0 })).send(res);
+    }
+    profileFilter.user = { $in: candidateUserIds };
+  }
+
+  const sortOption = sort === "recent" ? { createdAt: -1 } : { followersCount: -1, createdAt: -1 };
+
+  const [profiles, total] = await Promise.all([
+    Profile.find(profileFilter)
+      .populate("user", "name username avatarUrl role status createdAt")
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit),
+    Profile.countDocuments(profileFilter),
+  ]);
+
+  const filtered = profiles.filter((p) => p.user && p.user.status === "active");
+
+  let shaped = filtered;
+  if (req.user) {
+    const followingSet = await getFollowingSet(req.user._id, filtered.map((p) => p.user._id));
+    shaped = filtered.map((p) => {
+      const obj = p.toObject();
+      obj.isFollowing = followingSet.has(p.user._id.toString());
+      return obj;
+    });
+  }
+
+  return new ApiResponse(200, { profiles: shaped }, "Users fetched", buildMeta({ page, limit, total })).send(res);
+});
+
+/**
  * POST /profiles/me/avatar (authenticated, multipart "avatar")
  */
 const uploadAvatar = catchAsync(async (req, res) => {
@@ -343,6 +408,7 @@ module.exports = {
   checkUsernameAvailability,
   getPublicProfile,
   listProfiles,
+  listUsers,
   uploadAvatar,
   deleteAvatar,
   uploadCover,
