@@ -112,7 +112,25 @@ const getMyConversations = catchAsync(async (req, res) => {
 
   const hasMore = conversations.length > limit;
   const page = conversations.slice(0, limit);
-  const shaped = page.map((c) => shapeConversation(c, req.user._id));
+
+  // Fetch last message read/delivered status for each conversation
+  const lastMessagePromises = page.map(async (c) => {
+    const lastMsg = await Message.findOne({ conversation: c._id })
+      .sort({ createdAt: -1, _id: -1 })
+      .select("readBy deliveredTo sender");
+    return { convId: c._id.toString(), lastMsg };
+  });
+  const lastMessageResults = await Promise.all(lastMessagePromises);
+
+  const shaped = page.map((c) => {
+    const shapedConv = shapeConversation(c, req.user._id);
+    const result = lastMessageResults.find((r) => r.convId === c._id.toString());
+    if (result?.lastMsg) {
+      shapedConv.lastMessage.readBy = result.lastMsg.readBy || [];
+      shapedConv.lastMessage.deliveredTo = result.lastMsg.deliveredTo || [];
+    }
+    return shapedConv;
+  });
   const nextCursor = hasMore ? encodeCursor(page[page.length - 1], "lastActivityAt") : null;
 
   return new ApiResponse(200, { conversations: shaped, nextCursor, hasMore }, "Conversations fetched").send(res);
