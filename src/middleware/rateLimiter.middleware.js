@@ -13,7 +13,7 @@ const apiLimiter = rateLimit({
 // Tighter limiter for brute-force-sensitive auth endpoints.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, statusCode: 429, message: "Too many attempts, please try again later" },

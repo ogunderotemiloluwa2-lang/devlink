@@ -2,7 +2,7 @@ const express = require("express");
 const authController = require("../controllers/auth.controller");
 const validate = require("../middleware/validate.middleware");
 const { protect } = require("../middleware/auth.middleware");
-const { authLimiter, sensitiveActionLimiter } = require("../middleware/rateLimiter.middleware");
+const { apiLimiter, authLimiter, sensitiveActionLimiter } = require("../middleware/rateLimiter.middleware");
 const {
   registerValidator,
   loginValidator,
@@ -102,7 +102,7 @@ router.post(
  *       200: { description: New access token issued }
  *       401: { description: Refresh token missing/invalid }
  */
-router.post("/refresh", authController.refresh);
+router.post("/refresh", apiLimiter, authController.refresh);
 
 router.post("/logout", authController.logout);
 router.post("/logout-all", protect, authController.logoutAll);
