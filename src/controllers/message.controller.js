@@ -108,8 +108,8 @@ const sendMessage = catchAsync(async (req, res) => {
   emitToConversation(req, conversation._id, "message:new", message);
 
   // Mark message as delivered to online participants (those in the conversation room)
+  const io = req.app.get("io");
   try {
-    const io = req.app.get("io");
     const roomName = `conversation:${conversation._id}`;
     const rooms = io.sockets.adapter.rooms;
     const room = rooms?.get ? rooms.get(roomName) : rooms?.[roomName];
@@ -134,6 +134,7 @@ const sendMessage = catchAsync(async (req, res) => {
   }
 
   const notificationText =
+    conversation.type === "group" ? `sent a message in ${conversation.groupName || "a group"}` : "sent you a message";
 
   await Promise.all(
     conversation.participants
