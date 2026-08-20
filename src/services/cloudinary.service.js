@@ -28,7 +28,7 @@ async function uploadImage(buffer, folder, publicId) {
       public_id: publicId,
       resource_type: "image",
       overwrite: true,
-      transformation: [{ width: 1600, height: 1600, crop: "limit" }, { quality: "auto:good" }],
+      transformation: "c_limit,w_1600,h_1600,q_auto:good",
     });
     return { url: result.secure_url, publicId: result.public_id };
   } catch (err) {

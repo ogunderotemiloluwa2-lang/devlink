@@ -173,6 +173,111 @@ const logoutAll = catchAsync(async (req, res) => {
 });
 
 /**
+ * DELETE /auth/account
+ * Permanently deletes the authenticated user and all associated data.
+ */
+const deleteAccount = catchAsync(async (req, res) => {
+  const userId = req.user._id;
+
+  const [
+    Post,
+    Comment,
+    Bookmark,
+    Like,
+    Follow,
+    Notification,
+    Community,
+    CommunityMember,
+    Project,
+    ProjectMember,
+    ProjectTask,
+    ProjectFile,
+    ProjectDiscussionMessage,
+    Conversation,
+    Message,
+    Review,
+    Skill,
+    Search,
+    AITool,
+  ] = await Promise.all([
+    require("../models/Post.model"),
+    require("../models/Comment.model"),
+    require("../models/Bookmark.model"),
+    require("../models/Like.model"),
+    require("../models/Follow.model"),
+    require("../models/Notification.model"),
+    require("../models/Community.model"),
+    require("../models/CommunityMember.model"),
+    require("../models/Project.model"),
+    require("../models/ProjectMember.model"),
+    require("../models/ProjectTask.model"),
+    require("../models/ProjectFile.model"),
+    require("../models/ProjectDiscussionMessage.model"),
+    require("../models/Conversation.model"),
+    require("../models/Message.model"),
+    require("../models/Review.model"),
+    require("../models/Skill.model"),
+    require("../models/Search.model"),
+    require("../models/AITool.model"),
+  ]);
+
+  const [userPosts, userProjects, userComments, userReviews, userAITools, userCommunities] = await Promise.all([
+    Post.find({ author: userId }).select("_id"),
+    Project.find({ owner: userId }).select("_id"),
+    Comment.find({ author: userId }).select("_id"),
+    Review.find({ user: userId }).select("_id"),
+    AITool.find({ submittedBy: userId }).select("_id"),
+    Community.find({ creator: userId }).select("_id"),
+  ]);
+
+  const userPostIds = userPosts.map((p) => p._id);
+  const userProjectIds = userProjects.map((p) => p._id);
+  const userCommentIds = userComments.map((c) => c._id);
+  const userReviewIds = userReviews.map((r) => r._id);
+  const userAIToolIds = userAITools.map((t) => t._id);
+  const userCommunityIds = userCommunities.map((c) => c._id);
+
+  // Delete content authored by the user (and everything attached to it)
+  await Promise.all([
+    Post.deleteMany({ _id: { $in: userPostIds } }),
+    Comment.deleteMany({ _id: { $in: userCommentIds } }),
+    Like.deleteMany({ targetType: "Post", targetId: { $in: userPostIds } }),
+    Like.deleteMany({ targetType: "Comment", targetId: { $in: userCommentIds } }),
+    Like.deleteMany({ targetType: "Review", targetId: { $in: userReviewIds } }),
+    Like.deleteMany({ targetType: "AITool", targetId: { $in: userAIToolIds } }),
+    Bookmark.deleteMany({ user: userId }),
+    Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] }),
+    Notification.deleteMany({ $or: [{ recipient: userId }, { actor: userId }] }),
+    CommunityMember.deleteMany({ user: userId }),
+    Community.deleteMany({ _id: { $in: userCommunityIds } }),
+    Project.deleteMany({ _id: { $in: userProjectIds } }),
+    ProjectMember.deleteMany({ user: userId }),
+    ProjectTask.deleteMany({ project: { $in: userProjectIds } }),
+    ProjectFile.deleteMany({ project: { $in: userProjectIds } }),
+    ProjectDiscussionMessage.deleteMany({ project: { $in: userProjectIds } }),
+    Review.deleteMany({ _id: { $in: userReviewIds } }),
+    Skill.deleteMany({ user: userId }),
+    Search.deleteMany({ user: userId }),
+    AITool.deleteMany({ _id: { $in: userAIToolIds } }),
+  ]);
+
+  // Remove the user's likes/reactions/messages on others' content
+  await Promise.all([
+    Like.deleteMany({ user: userId }),
+    Message.deleteMany({ sender: userId }),
+  ]);
+
+  // Delete conversations the user is a participant in
+  await Conversation.deleteMany({ "participants.user": userId });
+
+  await Profile.findOneAndDelete({ user: userId });
+  await User.findByIdAndDelete(userId);
+
+  clearRefreshCookie(res);
+  return new ApiResponse(200, null, "Account deleted successfully").send(res);
+});
+
+/**
  * POST /auth/forgot-password
  */
 const forgotPassword = catchAsync(async (req, res) => {
@@ -260,6 +365,7 @@ module.exports = {
   refresh,
   logout,
   logoutAll,
+  deleteAccount,
   forgotPassword,
   resetPassword,
   changePassword,

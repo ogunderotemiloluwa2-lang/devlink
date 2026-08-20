@@ -169,4 +169,17 @@ router.patch("/change-password", protect, changePasswordValidator, validate, aut
  */
 router.get("/me", protect, authController.getMe);
 
+/**
+ * @swagger
+ * /auth/account:
+ *   delete:
+ *     summary: Permanently delete the authenticated user's account
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Account deleted }
+ *       401: { description: Not authenticated }
+ */
+router.delete("/account", protect, authController.deleteAccount);
+
 module.exports = router;
