@@ -92,7 +92,6 @@ postSchema.index({ createdAt: -1 });
 postSchema.index({ author: 1, createdAt: -1 });
 postSchema.index({ community: 1, isPinned: -1, createdAt: -1 });
 postSchema.index({ hashtags: 1, createdAt: -1 });
-postSchema.index({ content: "text", "codeSnippet.code": "text" });
 
 // Simple, explainable trending score: recent engagement weighted higher
 // than raw age. Recomputed on read (see post.controller#getTrendingPosts)
