@@ -51,7 +51,8 @@ const createPost = catchAsync(async (req, res) => {
   const { type = "text", content = "", codeSnippet, link, poll, project, community, quoteContent, repostOf } = req.body;
 
   if (!Post.TYPES.includes(type)) throw ApiError.badRequest("Invalid post type");
-  if (!content.trim() && type === "text") throw ApiError.badRequest("Post content cannot be empty");
+  // A plain repost (repostOf set, no quote) legitimately has empty content.
+  if (!content.trim() && type === "text" && !repostOf) throw ApiError.badRequest("Post content cannot be empty");
 
   if (repostOf) {
     const original = await Post.findById(repostOf);
